@@ -8,12 +8,13 @@ to support this project
 """
 import logging
 import re
+from typing import Optional
 
 import sublime
 import sublime_plugin
 
 from .formatters.utils import get_formatter, get_setting
-from .parsers.parser import get_parser
+from .parsers.parser import PythonParser, get_parser
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
     trailing_string = ''
     settings = ''
     indent_spaces = ''
-    parser = object
+    parser: Optional[PythonParser] = None
     line = ''
     contents = ''
     view_settings = None
@@ -122,7 +123,9 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
         self.trailing_rgn = sublime.Region(position, view.line(position).end())
         self.trailing_string = view.substr(self.trailing_rgn).strip()
         # drop trailing '"""'
-        self.trailing_string = escape(re.sub(r'\s*("""|\'\'\')\s*$', '', self.trailing_string))
+        self.trailing_string = escape(
+            re.sub(r'\s*("""|\'\'\')\s*$', '', self.trailing_string)
+        )
 
         self.parser = parser = get_parser(view)
 
@@ -154,7 +157,7 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
         snippet = self.trailing_string + formatter.description()
 
         for attribute_type, attributes in parsed_attributes:
-            if len(attributes) is 0:
+            if len(attributes) == 0:
                 continue
 
             segment = getattr(formatter, attribute_type)

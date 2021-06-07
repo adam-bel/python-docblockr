@@ -1,28 +1,10 @@
 """Parsing Class for python files."""
 import logging
 import re
+from typing import Dict, Optional
+import sublime
 
 log = logging.getLogger(__name__)
-
-
-def get_parser(view):
-    """Return the class of the parser to use.
-
-    Arguments:
-        view {sublime.View} -- The sublime text view in which this is executing in
-
-    Returns:
-        {PythonParser} or None if the current file type isn't a python file
-    """
-    scope = view.scope_name(view.sel()[0].end())
-    res = re.search(r'\bsource\.([a-z+\-]+)', scope)
-    source_lang = res.group(1) if res else 'js'
-    view_settings = view.settings()
-
-    if source_lang == "python":
-        return PythonParser(view_settings)
-
-    return None
 
 
 def split_by_commas(string):
@@ -74,7 +56,8 @@ def split_by_commas(string):
                     inside_quotes = False
         else:
             if char == ',':
-                out.append(current.strip())
+                if len(current.strip()):
+                    out.append(current.strip())
                 current = ''
             else:
                 current += char
@@ -83,11 +66,18 @@ def split_by_commas(string):
                     matching_quote = close_quotes[quote_index]
                     inside_quotes = True
 
-    out.append(current.strip())
+    if len(current.strip()):
+        out.append(current.strip())
     return out
 
 
-def read_next_line(view, position, reverse=False):
+# 寻找函数或类的定义
+FIND_DEFINITION = 1
+# 寻找函数或类上面的内容，如装饰器（可能有多个）
+FIND_ABOVE_DEFINITION = 2
+
+
+def read_next_line(view: sublime.View, position, reverse=False, flag: int = 0):
     """Get the next line of the view.
 
     From the given position, will expand the region to the current line in the file,
@@ -113,13 +103,26 @@ def read_next_line(view, position, reverse=False):
     if reverse is True:
         modifier = -1
 
-    while True:
+    go_on = True
+    while go_on:
         next_line = current_line.begin() if reverse else current_line.end()
         next_line += modifier
 
-        # Ensure within bounds of the view
-        if not (next_line < view.size() and next_line > 0):
-            break
+        # TODO: 用 black 或 yapf 格式化的代码，函数定义很可能会有多行，所以这里只读取函数注释的上一行是不够的
+        # 应该向上读取，直到某一行去掉左空白字符后是以 def 或 class 开头
+        if reverse:
+            if flag > 0:
+                line = view.line(next_line)
+                line_str = view.substr(line).strip()
+                if flag == FIND_DEFINITION:
+                    if line_str.startswith("def ") or line_str.startswith("class "):
+                        go_on = False
+                elif flag == FIND_ABOVE_DEFINITION:
+                    pass
+        else:
+            # Ensure within bounds of the view
+            if not (next_line < view.size() and next_line > 0):
+                break
 
         current_line = view.line(next_line)
 
@@ -160,7 +163,7 @@ def guess_type_from_name(name):
     return None
 
 
-def guess_type_from_value(value):
+def guess_type_from_value(value: Optional[str]) -> Optional[str]:
     """Make educated assertion about the type of the value.
 
     Arguments:
@@ -177,13 +180,7 @@ def guess_type_from_value(value):
     if is_numeric(value):
         return "number"
 
-    char_map = {
-        '\"': "str",
-        '\'': "str",
-        '[': "list",
-        '{': "dict",
-        '(': "tuple",
-    }
+    char_map = {'\"': "str", '\'': "str", '[': "list", '{': "dict", '(': "tuple"}
 
     if char_map.get(first_char) is not None:
         return char_map.get(first_char)
@@ -209,14 +206,13 @@ class PythonParser:
     Contains the relevant parsing configuration to be able to handle Python style
     source files.
     """
-
-    def __init__(self, view_settings=None):
+    def __init__(self, view_settings: Optional[Dict[str, str]] = None):
         """---."""
         self.view_settings = view_settings
         self.closing_string = '"""'
 
     @classmethod
-    def get_definition(self, view, position):
+    def get_definition(cls, view: sublime.View, position: int) -> Optional[str]:
         """Get the definition line.
 
         String representation fo the line above the docstring
@@ -238,22 +234,25 @@ class PythonParser:
         if position == 0:
             return None
 
-        indentation_level = view.indentation_level(position)
+        # 注释的缩进等级
+        # indentation_level = view.indentation_level(position)
         line = ''
 
-        for current_line in read_next_line(view, position, True):
+        for current_line in read_next_line(view, position, True, FIND_DEFINITION):
             current_line_string = view.substr(current_line).strip()
             line = current_line_string + ' ' + line
 
             # When we move up in scope, stop reading
-            current_indentation = view.indentation_level(current_line.end())
-            if current_indentation < indentation_level:
-                break
-
+            # current_indentation = view.indentation_level(current_line.end())
+            # # 如果当前行的缩进等级小于注释缩进等级，为什么就退出？
+            # print(f"当前行缩进等级：{current_indentation}")
+            # print(f"注释所在行缩进等级：{indentation_level}")
+            # if current_indentation < indentation_level:
+            #     break
         return line
 
     @classmethod
-    def read_above(cls, view, position):
+    def read_above(cls, view, position, flag: int = 0):
         """Read the contents above the current definition line.
 
         Gathers additional context about the lines above a definition line,
@@ -270,10 +269,10 @@ class PythonParser:
         docstring_type = None
         definition = ''
 
-        for current_line in read_next_line(view, position, True):
+        for current_line in read_next_line(view, position, True, flag):
             # Not an empty line
             current_line_string = view.substr(current_line).strip()
-            if len(current_line_string) is 0:
+            if not len(current_line_string):
                 continue
 
             # Ignore comments
@@ -281,13 +280,14 @@ class PythonParser:
                 continue
 
             # When we move up in scope, stop reading
-            current_indentation = view.indentation_level(current_line.end())
-            if not current_indentation == indentation_level - 1:
-                break
+            if not flag:
+                current_indentation = view.indentation_level(current_line.end())
+                if not current_indentation == indentation_level - 1:
+                    break
 
-            # Keeping it simple, will not parse multiline decorators
-            if docstring_type is not None and not re.match(r'^\s*(\@)', current_line_string):
-                break
+                # Keeping it simple, will not parse multiline decorators
+                if docstring_type is not None and not re.match(r'^\s*(\@)', current_line_string):
+                    break
 
             # Set to module, class, or function
             if docstring_type is None:
@@ -303,7 +303,7 @@ class PythonParser:
         return docstring_type, definition
 
     @classmethod
-    def get_definition_contents(cls, view, position):
+    def get_definition_contents(cls, view: sublime.View, position):
         """Get the relevant contents of the module/class/function.
 
         For Modules and Classes, will only provide the lines on the same
@@ -325,7 +325,7 @@ class PythonParser:
         indentation_level = view.indentation_level(position)
         definition = ''
 
-        docstring_type, definition = cls.read_above(view, position)
+        docstring_type, definition = cls.read_above(view, position, FIND_DEFINITION)
         # Read above the docstring for function/class definition and decorators
 
         # Read the class/function contents
@@ -347,7 +347,7 @@ class PythonParser:
 
             # If this is a module or a class, we only care about the lines on
             # the same indentation level for contextual reasons
-            if not docstring_type == 'function' and not current_indentation == indentation_level:
+            if (not docstring_type == 'function' and not current_indentation == indentation_level):
                 continue
 
             definition += current_line_string + '\n'
@@ -369,6 +369,7 @@ class PythonParser:
         """
         # At beginning of the module
         log.debug('definition_line -- {}'.format(line))
+
         output = self.process_module(line, contents)
         if output is not None:
             return output
@@ -383,7 +384,7 @@ class PythonParser:
 
         return {}
 
-    def process_variable(self, variable, hints=None):
+    def process_variable(self, variable: str, hints: Optional[Dict[str, str]] = None):
         """Process an individual variable.
 
         Determines programmatically what the assumed type of the variable is,
@@ -398,14 +399,11 @@ class PythonParser:
         Returns:
             {Dictionary} -- Dictionary of attributes to create snippets from
         """
-        if hints is None:
+        if not hints:
             hints = {}
 
-        params = {
-            'name': None,
-            'type': None,
-            'default': None,
-        }
+        # params = {'name': None, 'type': None, 'default': None}
+        params: Dict[str, Optional[str]] = {}
 
         if '=' in variable:
             pieces = variable.split('=')
@@ -413,9 +411,7 @@ class PythonParser:
             params['default'] = pieces[1].strip()
 
         params['name'] = variable
-        params['type'] = hints.get(variable, None) or \
-            guess_type_from_value(params.get('default')) or \
-            guess_type_from_name(variable)
+        params['type'] = (hints.get(variable, "") or guess_type_from_value(params.get('default')) or guess_type_from_name(variable))
 
         return params
 
@@ -563,10 +559,7 @@ class PythonParser:
             {dict} -- Contains a list of arguments and a list of
                       keyword arguments in their respective keys.
         """
-        parsed_arguments = {
-            'arguments': [],
-            'keyword_arguments': [],
-        }
+        parsed_arguments = {'arguments': [], 'keyword_arguments': []}
 
         arguments = re.search(r'^\s*def\s+\w+\((.*)\)', line)
 
@@ -604,13 +597,19 @@ class PythonParser:
         Returns:
             {tuple} -- type of return and a dict for the return value type
         """
-        regex = re.compile(r'^\s*(return|yield) (\w+)', re.MULTILINE)
+        regex = re.compile(r'^\s*(return|yield) (\S+)', re.MULTILINE)
         match = re.findall(regex, contents)
+        print(contents)
+        print(match)
 
         if len(match) == 0:
             return None
 
-        hint = re.search(r'^\s*def\s+\w+\(.*\)\s*->\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*:', contents)
+        hint = re.search(
+            r'^\s*def\s+\w+\(.*\)\s*->\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*:',
+            contents,
+            flags=re.DOTALL,
+        )
         if hint:
             hint = hint.group(1)
 
@@ -717,7 +716,7 @@ class PythonParser:
         for current_line in read_next_line(view, position):
             # Not an empty line
             current_line_string = view.substr(current_line).rstrip()
-            if len(current_line_string) is 0:
+            if not len(current_line_string):
                 continue
 
             # Not on a more indented line
@@ -737,3 +736,23 @@ class PythonParser:
 
         set_closing_string(re.search(r'^\s*("""|\'\'\')', line))
         return False
+
+
+def get_parser(view) -> Optional[PythonParser]:
+    """Return the class of the parser to use.
+
+    Arguments:
+        view {sublime.View} -- The sublime text view in which this is executing in
+
+    Returns:
+        {PythonParser} or None if the current file type isn't a python file
+    """
+    scope = view.scope_name(view.sel()[0].end())
+    res = re.search(r'\bsource\.([a-z+\-]+)', scope)
+    source_lang = res.group(1) if res else 'js'
+    view_settings = view.settings()
+
+    if source_lang == "python":
+        return PythonParser(view_settings)
+
+    return None

@@ -18,17 +18,21 @@ class GoogleFormatter(Base):
     def arguments(self, attributes):
         """Create snippet string for a list of arguments."""
         section = '\nArgs:\n'
-        template = '\t{name}: {description}\n'
+        template = '\t{name} ({type}): {description}\n'
 
         for attr in attributes['arguments']:
             section += template.format(
                 name=self._generate_field('name', attr['name']),
+                type=self._generate_field('type', attr['type']),
                 description=self._generate_field('description'),
             )
 
         section += self.keyword_arguments(attributes['keyword_arguments'])
 
-        if len(attributes['arguments']) == 0 and len(attributes['keyword_arguments']) == 0:
+        if (
+            len(attributes['arguments']) == 0
+            and len(attributes['keyword_arguments']) == 0
+        ):
             section = ''
 
         return section
@@ -36,7 +40,7 @@ class GoogleFormatter(Base):
     def keyword_arguments(self, attributes):
         """Create snippet string for a list of keyword arguments."""
         section = ''
-        template = '\t{name}: {description} (default: {{{default}}})\n'
+        template = '\t{name} ({type}): {description} (default: {{{default}}})\n'
 
         if len(attributes) == 0:
             return ''
@@ -44,6 +48,7 @@ class GoogleFormatter(Base):
         for attr in attributes:
             section += template.format(
                 name=self._generate_field('name', attr['name']),
+                type=self._generate_field('type', attr['type']),
                 description=self._generate_field('description'),
                 default=self._generate_field('default', attr['default']),
             )
@@ -53,7 +58,7 @@ class GoogleFormatter(Base):
     def returns(self, attribute):
         """Create snippet string for a list of return values."""
         section = '\nReturns:\n'
-        template = '\t{description}\n\t{type}\n'
+        template = '\t{type}: {description}\n'
 
         section += template.format(
             description=self._generate_field('description'),
