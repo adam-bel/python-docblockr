@@ -4,7 +4,7 @@
 # @Email:     thepoy@163.com
 # @File Name: log.py
 # @Created:   2022-08-25 11:30:28
-# @Modified:  2022-08-25 16:12:20
+# @Modified:  2022-08-25 17:29:47
 
 import os
 import logging
@@ -12,16 +12,12 @@ import sublime
 
 from typing import Dict, Optional, Literal
 from datetime import datetime
-from .consts import PACKAGE_NAME, TIME_FORMAT_WITHOUT_DATE
+from .consts import TIME_FORMAT_WITHOUT_DATE
 
 _style = Literal["%", "{", "$"]
 
 
 class Formatter(logging.Formatter):
-    """
-    有颜色的日志
-    """
-
     def __init__(
         self,
         fmt: Optional[str] = None,
@@ -96,16 +92,34 @@ class Formatter(logging.Formatter):
         return s
 
 
-def log_level():
+def log_level() -> int:
+    """Get the log level.
+
+    Returns `DEBUG` in debug mode, `INFO` otherwise.
+
+    Returns:
+        int: log level
+    """
     current_path = os.path.abspath(os.path.dirname(__file__))
-    installed_pkg_path = os.path.join(sublime.installed_packages_path(), PACKAGE_NAME)
+    print(current_path)
+    print(sublime.installed_packages_path())
     return (
-        logging.INFO if current_path.startswith(installed_pkg_path) else logging.DEBUG
+        logging.INFO
+        if current_path.startswith(sublime.installed_packages_path())
+        else logging.DEBUG
     )
 
 
 def get_logger():
-    logger = logging.getLogger()
+    """Get the root logger of the package.
+
+    Use a custom Formatter to create a logger
+    that is only valid for this package.
+
+    Returns:
+        Logger: the instance of `logging.Logger`
+    """
+    logger = logging.getLogger("python-docblockr")
 
     console_handler = logging.StreamHandler()
     fmt = Formatter(datefmt=TIME_FORMAT_WITHOUT_DATE, print_position=True)
@@ -121,7 +135,15 @@ def get_logger():
 __logger = get_logger()
 
 
-def child_logger(name: str):
-    log = __logger.getChild(name)
+def child_logger(name: str) -> logging.Logger:
+    """Get a new child logger with `name`.
+
+    Args:
+        name (str): the name of child logger
+
+    Returns:
+        Logger: the instance of `logging.Logger`
+    """
+    log = __logger.getChild(name.replace("python-docblockr.", ""))
 
     return log
