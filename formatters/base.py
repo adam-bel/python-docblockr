@@ -1,8 +1,6 @@
 """Base formatter class."""
 from abc import abstractmethod, ABCMeta
 
-from .registry import register
-
 
 def counter():
     """Simple Iteratable Counter.
@@ -19,21 +17,7 @@ def counter():
         yield count
 
 
-class FormatterMeta(ABCMeta):
-    """Register the class in the formatter.
-
-    Extends:
-        ABCMeta
-    """
-
-    def __new__(mcs, classname, bases, attributes):
-        """---."""
-        newclass = super(FormatterMeta, mcs).__new__(mcs, classname, bases, attributes)
-        register(newclass)
-        return newclass
-
-
-class Base(metaclass=FormatterMeta):
+class Base:
     """Base Formatter Class.
 
     This class provides the template that all inheriting Formatters should follow.

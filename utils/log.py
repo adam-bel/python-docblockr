@@ -4,7 +4,7 @@
 # @Email:     thepoy@163.com
 # @File Name: log.py
 # @Created:   2022-08-25 11:30:28
-# @Modified:  2022-08-25 15:33:54
+# @Modified:  2022-08-25 16:12:20
 
 import os
 import logging
@@ -105,7 +105,7 @@ def log_level():
 
 
 def get_logger():
-    logger = logging.getLogger("pydoc")
+    logger = logging.getLogger()
 
     console_handler = logging.StreamHandler()
     fmt = Formatter(datefmt=TIME_FORMAT_WITHOUT_DATE, print_position=True)
