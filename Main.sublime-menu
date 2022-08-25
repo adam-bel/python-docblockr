@@ -8,13 +8,13 @@
         "id": "package-settings",
         "children": [
           {
-            "caption": "PyDoc",
+            "caption": "Python Docblockr",
             "children": [
               {
                 "caption": "Settings",
                 "command": "edit_settings",
                 "args": {
-                  "base_file": "${packages}/python-docblockr/PyDoc.sublime-settings"
+                  "base_file": "${packages}/python-docblockr/PythonDocblockr.sublime-settings"
                 }
               }
             ]
