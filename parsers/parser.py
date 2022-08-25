@@ -262,7 +262,7 @@ class PythonParser:
         for current_line in read_next_line(view, position, True):
             # Not an empty line
             current_line_string = view.substr(current_line).strip()
-            if len(current_line_string) is 0:
+            if len(current_line_string) == 0:
                 continue
 
             # Ignore comments

@@ -1,12 +1,21 @@
 """Common Utilities for the default formatters."""
 import sublime
+from typing import Dict
 from ..utils.log import child_logger
-from .registry import REGISTRY
+from . import base, PEP0257, docblock, google, sphinx, numpy
 
 log = child_logger(__name__)
 
+FORMATTER_DICT: Dict[str, base.BaseFormatter] = {
+    "PEP0257": PEP0257.Pep0257Formatter,
+    "docblock": docblock.DocblockFormatter,
+    "google": google.GoogleFormatter,
+    "numpy": sphinx.SphinxFormatter,
+    "sphinx": numpy.NumpyFormatter,
+}
 
-def get_formatter(name):
+
+def get_formatter(name: str):
     """Return the requested formatter by name from the registry.
 
     Attempts to get the requested formatter from the registry. If it doesn't
@@ -18,15 +27,18 @@ def get_formatter(name):
     Returns:
         formatters.base.Base -- Instance of the Base formatter
     """
-    formatter = REGISTRY.get(name, None)
+    formatter = FORMATTER_DICT.get(name, None)
 
-    if formatter is None:
+    if not formatter:
         log.warning(
-            "Formatter {} doesn't exist. Defaulting to Base formatter.".format(name)
+            "formatter `{}` doesn't exist, defaulting to `Google` formatter.".format(
+                name
+            )
         )
-        from . import base
 
-        formatter = getattr(base, "BaseFormatter")
+        formatter = google.GoogleFormatter
+
+    log.debug("use formatter -> %s", formatter.name)
 
     return formatter
 

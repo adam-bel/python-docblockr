@@ -4,7 +4,7 @@
 # @Email:     thepoy@163.com
 # @File Name: log.py
 # @Created:   2022-08-25 11:30:28
-# @Modified:  2022-08-25 11:45:37
+# @Modified:  2022-08-25 15:33:54
 
 import os
 import logging
@@ -68,7 +68,7 @@ class Formatter(logging.Formatter):
         if not self.print_position:
             return ""
 
-        if record.levelname in ["INFO", "WARNING", "WARN"]:
+        if record.levelname in ["INFO"]:
             return ""
 
         return f":{record.lineno} "

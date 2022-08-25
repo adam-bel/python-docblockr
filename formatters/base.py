@@ -51,27 +51,27 @@ class Base(metaclass=FormatterMeta):
         metaclass=FormatterMeta
 
     Variables:
-        name {str} -- The name the formatter will be registered under.
+        name {str} -- The name the formatter will be registered under.Default is 'google'.
         tab_index {generator} -- Provides a simple count generator for convenience
                                  in making tabbable fields
     """
 
-    name = None
+    name: str = "google"
     tab_index = counter()
 
     def __dict__(self):
         """---."""
         return {
-            'summary': self.summary,
-            'description': self.description,
-            'decorators': self.decorators,
-            'extends': self.extends,
-            'arguments': self.arguments,
-            'keyword_arguments': self.keyword_arguments,
-            'returns': self.returns,
-            'yields': self.yields,
-            'raises': self.raises,
-            'variables': self.variables,
+            "summary": self.summary,
+            "description": self.description,
+            "decorators": self.decorators,
+            "extends": self.extends,
+            "arguments": self.arguments,
+            "keyword_arguments": self.keyword_arguments,
+            "returns": self.returns,
+            "yields": self.yields,
+            "raises": self.raises,
+            "variables": self.variables,
         }
 
     def __iter__(self):
@@ -97,58 +97,57 @@ class Base(metaclass=FormatterMeta):
         if value is not None:
             return value
 
-        return '${{{tab_index}:[{name}]}}'.format(
-            tab_index=next(self.tab_index),
-            name=name
+        return "${{{tab_index}:[{name}]}}".format(
+            tab_index=next(self.tab_index), name=name
         )
 
     def summary(self):
         """Create snippet string for the summary line."""
-        return '{}'.format(self._generate_field('summary'))
+        return "{}".format(self._generate_field("summary"))
 
     def description(self):
         """Create snippet string for the description body."""
-        return '\n\n{}\n'.format(self._generate_field('description'))
+        return "\n\n{}\n".format(self._generate_field("description"))
 
     @abstractmethod
     def decorators(self, attributes):
         """Create snippet string for a list of decorators."""
-        return ''
+        return ""
 
     @abstractmethod
     def extends(self, attributes):
         """Create snippet string for a list of extended objects."""
-        return ''
+        return ""
 
     @abstractmethod
     def arguments(self, attributes):
         """Create snippet string for a list of arguments."""
-        return ''
+        return ""
 
     @abstractmethod
     def keyword_arguments(self, attributes):
         """Create snippet string for a list of keyword arguments."""
-        return ''
+        return ""
 
     @abstractmethod
     def returns(self, attribute):
         """Create snippet string for a list of return values."""
-        return ''
+        return ""
 
     @abstractmethod
     def yields(self, attribute):
         """Create snippet string for a list of yielded results."""
-        return ''
+        return ""
 
     @abstractmethod
     def raises(self, attributes):
         """Create snippet string for a list of raiased exceptions."""
-        return ''
+        return ""
 
     @abstractmethod
     def variables(self, attributes):
         """Create snippet string for a list of variables."""
-        return ''
+        return ""
 
 
 class BaseFormatter(Base):
@@ -156,32 +155,32 @@ class BaseFormatter(Base):
 
     def decorators(self, attributes):
         """Create snippet string for a list of decorators."""
-        return '{}\n'.format(self._generate_field('decorators'))
+        return "{}\n".format(self._generate_field("decorators"))
 
     def extends(self, attributes):
         """Create snippet string for a list of extended objects."""
-        return '{}\n'.format(self._generate_field('extends'))
+        return "{}\n".format(self._generate_field("extends"))
 
     def arguments(self, attributes):
         """Create snippet string for a list of arguments."""
-        return '{}\n'.format(self._generate_field('arguments'))
+        return "{}\n".format(self._generate_field("arguments"))
 
     def keyword_arguments(self, attributes):
         """Create snippet string for a list of keyword arguments."""
-        return '{}\n'.format(self._generate_field('keyword arguments'))
+        return "{}\n".format(self._generate_field("keyword arguments"))
 
     def returns(self, attribute):
         """Create snippet string for a list of return values."""
-        return '{}\n'.format(self._generate_field('returns'))
+        return "{}\n".format(self._generate_field("returns"))
 
     def yields(self, attribute):
         """Create snippet string for a list of yielded results."""
-        return '{}\n'.format(self._generate_field('yields'))
+        return "{}\n".format(self._generate_field("yields"))
 
     def raises(self, attributes):
         """Create snippet string for a list of raiased exceptions."""
-        return '{}\n'.format(self._generate_field('raises'))
+        return "{}\n".format(self._generate_field("raises"))
 
     def variables(self, attributes):
         """Create snippet string for a list of variables."""
-        return '{}\n'.format(self._generate_field('variables'))
+        return "{}\n".format(self._generate_field("variables"))
