@@ -200,7 +200,7 @@ class PythonParser:
     source files.
     """
 
-    def __init__(self, view_settings: Optional[Dict[str, str]] = None):
+    def __init__(self, view_settings: Optional[sublime.Settings] = None):
         """---."""
         self.view_settings = view_settings
         self.closing_string = '"""'

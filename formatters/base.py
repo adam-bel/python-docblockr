@@ -1,5 +1,5 @@
 """Base formatter class."""
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod
 
 
 def counter():

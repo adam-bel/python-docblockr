@@ -1,12 +1,12 @@
 """Common Utilities for the default formatters."""
 import sublime
-from typing import Dict
+from typing import Dict, Type
 from ..utils.log import child_logger
 from . import base, PEP0257, docblock, google, sphinx, numpy
 
 log = child_logger(__name__)
 
-FORMATTER_DICT: Dict[str, base.BaseFormatter] = {
+FORMATTER_DICT: Dict[str, Type[base.Base]] = {
     "PEP0257": PEP0257.Pep0257Formatter,
     "docblock": docblock.DocblockFormatter,
     "google": google.GoogleFormatter,
