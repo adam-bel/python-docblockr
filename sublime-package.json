@@ -2,21 +2,13 @@
   "contributions": {
     "settings": [
       {
-        "file_patterns": [
-          "PythonDocblockr.sublime-settings"
-        ],
+        "file_patterns": ["PyDoc.sublime-settings"],
         "schema": {
           "properties": {
             "formatter": {
               "type": "string",
               "default": "formatter",
-              "enum": [
-                "PEP0257",
-                "docblock",
-                "google",
-                "sphinx",
-                "numpy"
-              ],
+              "enum": ["PEP0257", "docblock", "google", "sphinx", "numpy"],
               "markdownDescription": "This option dictates which style of docstrings to use, when parsing docstrings."
             }
           }
