@@ -1,10 +1,10 @@
 """Parsing Class for python files."""
-import logging
 import re
-from typing import Dict, Optional
 import sublime
+from typing import Dict, Optional
+from ..utils.log import child_logger
 
-log = logging.getLogger(__name__)
+log = child_logger(__name__)
 
 
 def split_by_commas(string):
@@ -30,16 +30,16 @@ def split_by_commas(string):
         return out
 
     # the current token
-    current = ''
+    current = ""
 
     # characters which open a section inside which commas are not separators between different
     # arguments
-    open_quotes = '"\'<({['
+    open_quotes = "\"'<({["
     # characters which close the section. The position of the character here should match the
     # opening indicator in `open_quotes`
-    close_quotes = '"\'>)}]'
+    close_quotes = "\"'>)}]"
 
-    matching_quote = ''
+    matching_quote = ""
     inside_quotes = False
     is_next_literal = False
 
@@ -48,17 +48,17 @@ def split_by_commas(string):
             current += char
             is_next_literal = False
         elif inside_quotes:
-            if char == '\\':
+            if char == "\\":
                 is_next_literal = True
             else:
                 current += char
                 if char == matching_quote:
                     inside_quotes = False
         else:
-            if char == ',':
+            if char == ",":
                 if len(current.strip()):
                     out.append(current.strip())
-                current = ''
+                current = ""
             else:
                 current += char
                 quote_index = open_quotes.find(char)
@@ -71,13 +71,10 @@ def split_by_commas(string):
     return out
 
 
-# 寻找函数或类的定义
-FIND_DEFINITION = 1
-# 寻找函数或类上面的内容，如装饰器（可能有多个）
-FIND_ABOVE_DEFINITION = 2
+START_KEYWORDS = ["def", "class", "async"]
 
 
-def read_next_line(view: sublime.View, position, reverse=False, flag: int = 0):
+def read_next_line(view: sublime.View, position: int, reverse=False):
     """Get the next line of the view.
 
     From the given position, will expand the region to the current line in the file,
@@ -100,7 +97,7 @@ def read_next_line(view: sublime.View, position, reverse=False, flag: int = 0):
     """
     current_line = view.line(position)
     modifier = 1
-    if reverse is True:
+    if reverse:
         modifier = -1
 
     go_on = True
@@ -108,17 +105,13 @@ def read_next_line(view: sublime.View, position, reverse=False, flag: int = 0):
         next_line = current_line.begin() if reverse else current_line.end()
         next_line += modifier
 
-        # TODO: 用 black 或 yapf 格式化的代码，函数定义很可能会有多行，所以这里只读取函数注释的上一行是不够的
-        # 应该向上读取，直到某一行去掉左空白字符后是以 def 或 class 开头
         if reverse:
-            if flag > 0:
-                line = view.line(next_line)
-                line_str = view.substr(line).strip()
-                if flag == FIND_DEFINITION:
-                    if line_str.startswith("def ") or line_str.startswith("class "):
-                        go_on = False
-                elif flag == FIND_ABOVE_DEFINITION:
-                    pass
+            line = view.line(next_line)
+            line_str = view.substr(line).strip()
+            start_keyword = line_str.split(" ", 2)[0]
+            log.debug("start keyword -> %s", start_keyword)
+            if line_str.split(" ", 2)[0] in START_KEYWORDS:
+                go_on = False
         else:
             # Ensure within bounds of the view
             if not (next_line < view.size() and next_line > 0):
@@ -155,10 +148,10 @@ def guess_type_from_name(name):
         {str} -- string of the builtin type or None if one cannot be found
     """
     if re.match("(?:is|has)[A-Z_]", name):
-        return 'bool'
+        return "bool"
 
     if re.match("^(?:cb|callback|done|next|fn)$", name):
-        return 'function'
+        return "function"
 
     return None
 
@@ -180,22 +173,22 @@ def guess_type_from_value(value: Optional[str]) -> Optional[str]:
     if is_numeric(value):
         return "number"
 
-    char_map = {'\"': "str", '\'': "str", '[': "list", '{': "dict", '(': "tuple"}
+    char_map = {'"': "str", "'": "str", "[": "list", "{": "dict", "(": "tuple"}
 
     if char_map.get(first_char) is not None:
         return char_map.get(first_char)
 
-    if value in ['True', 'False']:
-        return 'bool'
+    if value in ["True", "False"]:
+        return "bool"
 
     if value[:2] in ["r'", 'r"', "R'", 'R"']:
-        return 'regexp'
+        return "regexp"
 
     if value[:2] in ["u'", 'u"', "U'", 'U"']:
-        return 'unicode'
+        return "unicode"
 
-    if value[:7] == 'lambda ':
-        return 'function'
+    if value[:7] == "lambda ":
+        return "function"
 
     return None
 
@@ -206,13 +199,14 @@ class PythonParser:
     Contains the relevant parsing configuration to be able to handle Python style
     source files.
     """
+
     def __init__(self, view_settings: Optional[Dict[str, str]] = None):
         """---."""
         self.view_settings = view_settings
         self.closing_string = '"""'
 
     @classmethod
-    def get_definition(cls, view: sublime.View, position: int) -> Optional[str]:
+    def get_definition(cls, view: sublime.View, position: int):
         """Get the definition line.
 
         String representation fo the line above the docstring
@@ -232,78 +226,78 @@ class PythonParser:
 
         # At beginning of the module
         if position == 0:
-            return None
+            return None, None
 
-        # 注释的缩进等级
         # indentation_level = view.indentation_level(position)
-        line = ''
+        line: str = ""
 
-        for current_line in read_next_line(view, position, True, FIND_DEFINITION):
+        multiline = 0
+        for current_line in read_next_line(view, position, True):
             current_line_string = view.substr(current_line).strip()
-            line = current_line_string + ' ' + line
+            line = current_line_string + " " + line
+            multiline += 1
 
-            # When we move up in scope, stop reading
-            # current_indentation = view.indentation_level(current_line.end())
-            # # 如果当前行的缩进等级小于注释缩进等级，为什么就退出？
-            # print(f"当前行缩进等级：{current_indentation}")
-            # print(f"注释所在行缩进等级：{indentation_level}")
-            # if current_indentation < indentation_level:
-            #     break
-        return line
+        log.debug("number of lines defined -> %s", multiline)
+        log.debug("definition -- {}".format(line))
+
+        return line, multiline
 
     @classmethod
-    def read_above(cls, view, position, flag: int = 0):
+    def read_above(
+        cls, view: sublime.View, position: int, multiline: Optional[int] = None
+    ):
         """Read the contents above the current definition line.
-
         Gathers additional context about the lines above a definition line,
         e.g. Decorators.
-
         Arguments:
             view {sublime.View} -- The sublime view in which this is executing
             position {Integer} -- Position of the docstring
-
         Returns:
             string, string -- type of definition, stringified definition contents
         """
         indentation_level = view.indentation_level(position)
         docstring_type = None
-        definition = ''
+        definition = ""
 
-        for current_line in read_next_line(view, position, True, flag):
+        for current_line in read_next_line(view, position, True):
             # Not an empty line
             current_line_string = view.substr(current_line).strip()
-            if not len(current_line_string):
+            if len(current_line_string) is 0:
                 continue
 
             # Ignore comments
-            if re.match(r'^\s*(\#)', current_line_string):
+            if re.match(r"^\s*(\#)", current_line_string):
                 continue
 
-            # When we move up in scope, stop reading
-            if not flag:
+            if multiline and multiline == 1:
+                # When we move up in scope, stop reading
                 current_indentation = view.indentation_level(current_line.end())
                 if not current_indentation == indentation_level - 1:
                     break
 
                 # Keeping it simple, will not parse multiline decorators
-                if docstring_type is not None and not re.match(r'^\s*(\@)', current_line_string):
+                if docstring_type is not None and not re.match(
+                    r"^\s*(\@)", current_line_string
+                ):
                     break
 
             # Set to module, class, or function
             if docstring_type is None:
-                if re.match(r'^\s*(class )', current_line_string):
-                    docstring_type = 'class'
-                elif re.match(r'^\s*(def )', current_line_string):
-                    docstring_type = 'function'
+                if re.match(r"^\s*(class )", current_line_string):
+                    docstring_type = "class"
+                elif re.match(r"^\s*(def )", current_line_string):
+                    docstring_type = "function"
                 else:
-                    docstring_type = 'module'
+                    docstring_type = "module"
 
-            definition = current_line_string + '\n' + definition
+            definition = current_line_string + "\n" + definition
 
         return docstring_type, definition
 
     @classmethod
-    def get_definition_contents(cls, view: sublime.View, position):
+    def get_definition_contents(
+        cls, view: sublime.View, position: int, multiline: Optional[int]
+    ):
         """Get the relevant contents of the module/class/function.
 
         For Modules and Classes, will only provide the lines on the same
@@ -323,9 +317,9 @@ class PythonParser:
             {String} Contents that matter
         """
         indentation_level = view.indentation_level(position)
-        definition = ''
+        definition: str = ""
 
-        docstring_type, definition = cls.read_above(view, position, FIND_DEFINITION)
+        docstring_type, definition = cls.read_above(view, position, multiline)
         # Read above the docstring for function/class definition and decorators
 
         # Read the class/function contents
@@ -336,7 +330,7 @@ class PythonParser:
                 continue
 
             # Remove comments
-            if re.match(r'^\s*(\#)', current_line_string):
+            if re.match(r"^\s*(\#)", current_line_string):
                 continue
 
             current_indentation = view.indentation_level(current_line.end())
@@ -347,14 +341,19 @@ class PythonParser:
 
             # If this is a module or a class, we only care about the lines on
             # the same indentation level for contextual reasons
-            if (not docstring_type == 'function' and not current_indentation == indentation_level):
+            if (
+                not docstring_type == "function"
+                and not current_indentation == indentation_level
+            ):
                 continue
 
-            definition += current_line_string + '\n'
+            definition += current_line_string + "\n"
+
+        log.debug("contents -> %s", definition)
 
         return definition
 
-    def parse(self, line, contents):
+    def parse(self, line: str, contents: str):
         """Central command to parse the areas above and below the docstring.
 
         Tries to determine which type of docstring should be created based upon
@@ -368,7 +367,6 @@ class PythonParser:
             {Dictionary} Store of attributes and their values
         """
         # At beginning of the module
-        log.debug('definition_line -- {}'.format(line))
 
         output = self.process_module(line, contents)
         if output is not None:
@@ -405,13 +403,17 @@ class PythonParser:
         # params = {'name': None, 'type': None, 'default': None}
         params: Dict[str, Optional[str]] = {}
 
-        if '=' in variable:
-            pieces = variable.split('=')
+        if "=" in variable:
+            pieces = variable.split("=")
             variable = pieces[0].strip()
-            params['default'] = pieces[1].strip()
+            params["default"] = pieces[1].strip()
 
-        params['name'] = variable
-        params['type'] = (hints.get(variable, "") or guess_type_from_value(params.get('default')) or guess_type_from_name(variable))
+        params["name"] = variable
+        params["type"] = (
+            hints.get(variable, "")
+            or guess_type_from_value(params.get("default"))
+            or guess_type_from_name(variable)
+        )
 
         return params
 
@@ -425,8 +427,9 @@ class PythonParser:
             {Dictionary} -- Dictionary of attributes to create snippets from
         """
         variables = []
-        contents + '\n'
-        regex = re.compile(r'^\s*((?:(?!from |import |def |class |@).)+$)', re.MULTILINE)
+        regex = re.compile(
+            r"^\s*((?:(?!from |import |def |class |@).)+$)", re.MULTILINE
+        )
         matches = re.findall(regex, contents)
 
         if len(matches) == 0:
@@ -438,7 +441,7 @@ class PythonParser:
 
         return variables
 
-    def process_module(self, line, contents):
+    def process_module(self, line: str, contents: str):
         """Parse the whole module file to find module level variables.
 
         Reads the lines in the module contents to get the names of the module level variables.
@@ -458,7 +461,9 @@ class PythonParser:
         variables = self.parse_variables(contents)
 
         if variables is not None:
-            parsed_module.append(('variables', variables))
+            parsed_module.append(("variables", variables))
+
+        log.debug("module -> %s", parsed_module)
 
         return parsed_module
 
@@ -471,7 +476,7 @@ class PythonParser:
         Returns:
             {Dictionary} -- Dictionary of attributes to create snippets from
         """
-        extends = re.search(r'^\s*class \w*\((.*)\):\s*$', line)
+        extends = re.search(r"^\s*class \w*\((.*)\):\s*$", line)
 
         if not extends:
             return None
@@ -479,7 +484,7 @@ class PythonParser:
         extends = split_by_commas(extends.group(1))
         parsed_extends = []
         for extend in extends:
-            if extend == 'object':
+            if extend == "object":
                 continue
 
             parsed_extends.append(extend)
@@ -500,18 +505,20 @@ class PythonParser:
         Returns:
             {Dictionary} Dictionary of attributes to create snippets from
         """
-        if not re.match(r'^\s*(class )', line):
+        if not re.match(r"^\s*(class )", line):
             return None
 
         parsed_class = []
 
         extends = self.parse_extends(line)
         if extends is not None:
-            parsed_class.append(('extends', extends))
+            parsed_class.append(("extends", extends))
 
         variables = self.parse_variables(contents)
         if variables is not None:
-            parsed_class.append(('variables', variables))
+            parsed_class.append(("variables", variables))
+
+        log.debug("class -- %s", parsed_class)
 
         return parsed_class
 
@@ -528,15 +535,15 @@ class PythonParser:
         Returns:
             {list} -- list of decorators
         """
-        lines = content.split('\n')
-        excluded_decorators = ['classmethod', 'staticmethod', 'property']
+        lines = content.split("\n")
+        excluded_decorators = ["classmethod", "staticmethod", "property"]
         decorators = []
 
         for line in lines:
             if line == definition:
                 break
 
-            match = re.findall(r'^\s*@([a-zA-Z0-9_\.]*)(\(.*\)|$)', line)
+            match = re.findall(r"^\s*@([a-zA-Z0-9_\.]*)(\(.*\)|$)", line)
 
             if len(match) == 0:
                 continue
@@ -549,7 +556,7 @@ class PythonParser:
 
         return decorators
 
-    def parse_arguments(self, line):
+    def parse_arguments(self, line: str):
         """Find and parses each argument and keyword argument.
 
         Arguments:
@@ -559,33 +566,37 @@ class PythonParser:
             {dict} -- Contains a list of arguments and a list of
                       keyword arguments in their respective keys.
         """
-        parsed_arguments = {'arguments': [], 'keyword_arguments': []}
+        parsed_arguments = {"arguments": [], "keyword_arguments": []}
 
-        arguments = re.search(r'^\s*def\s+\w+\((.*)\)', line)
+        arguments = re.search(r"^\s*def\s+\w+\((.*)\)", line)
+
+        log.debug("found arguments -- %r", arguments)
 
         # Parse type hints
-        hints = dict(re.findall(r'(\w+)\s*:\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*', arguments.group(1)))
+        hints = dict(
+            re.findall(r"(\w+)\s*:\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*", arguments.group(1))  # type: ignore
+        )
 
         # Remove type hints
-        arguments = re.sub(r':\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*', "", arguments.group(1))
+        arguments = re.sub(r":\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*", "", arguments.group(1))  # type: ignore
 
         if not arguments:
             return None
 
-        excluded_parameters = ['self', 'cls']
+        excluded_parameters = ["self", "cls"]
         arguments = split_by_commas(arguments)
 
         for index, argument in enumerate(arguments):
             if index == 0 and argument in excluded_parameters:
                 continue
 
-            argument_type = 'keyword_arguments' if '=' in argument else 'arguments'
+            argument_type = "keyword_arguments" if "=" in argument else "arguments"
             params = self.process_variable(argument, hints)
             parsed_arguments[argument_type].append(params)
 
         return parsed_arguments
 
-    def parse_returns(self, contents):
+    def parse_returns(self, contents: str):
         """Find the first instances of returning in the definition.
 
         Parses through the whole definition for occurrances of the keyword `return`,
@@ -597,27 +608,29 @@ class PythonParser:
         Returns:
             {tuple} -- type of return and a dict for the return value type
         """
-        regex = re.compile(r'^\s*(return|yield) (\S+)', re.MULTILINE)
+        regex = re.compile(r"^\s*(return|yield) (\S+)", re.MULTILINE)
         match = re.findall(regex, contents)
-        print(contents)
-        print(match)
 
         if len(match) == 0:
             return None
 
         hint = re.search(
-            r'^\s*def\s+\w+\(.*\)\s*->\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*:',
+            r"^\s*def\s+\w+\(.*\)\s*->\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*:",
             contents,
             flags=re.DOTALL,
         )
         if hint:
             hint = hint.group(1)
+            log.debug(
+                "return value(s) type declaration found in function definition -> %s",
+                hint,
+            )
 
         match = match[0]
-        return_type = match[0] + 's'
+        return_type = match[0] + "s"
         return_value_type = hint or guess_type_from_value(match[1])
 
-        return (return_type, {'type': return_value_type})
+        return (return_type, {"type": return_value_type})
 
     def parse_raises(self, contents):
         """Find instances of raised exceptions in the definition.
@@ -631,7 +644,7 @@ class PythonParser:
         Returns:
             {list} -- list of exception types
         """
-        regex = re.compile(r'^\s*(raise) (\w+)', re.MULTILINE)
+        regex = re.compile(r"^\s*(raise) (\w+)", re.MULTILINE)
         match = re.findall(regex, contents)
 
         if len(match) == 0:
@@ -644,7 +657,7 @@ class PythonParser:
 
         return raises
 
-    def process_function(self, line, contents):
+    def process_function(self, line: str, contents: str):
         """Parse a function for its arguments.
 
         Reads the function line to parse out the args and kwargs.
@@ -658,18 +671,19 @@ class PythonParser:
         Returns:
             {Dictionary} Parsed valued group by type
         """
-        if not re.match(r'^\s*(def )', line):
+        if not re.match(r"^\s*(def )", line):
+            log.debug("not function type")
             return None
 
         parsed_function = []
 
         decorators = self.parse_decorators(line, contents)
         if len(decorators) > 0:
-            parsed_function.append(('decorators', decorators))
+            parsed_function.append(("decorators", decorators))
 
         arguments = self.parse_arguments(line)
         if arguments is not None:
-            parsed_function.append(('arguments', arguments))
+            parsed_function.append(("arguments", arguments))
 
         returns = self.parse_returns(contents)
         if returns is not None:
@@ -677,7 +691,9 @@ class PythonParser:
 
         raises = self.parse_raises(contents)
         if raises is not None:
-            parsed_function.append(('raises', raises))
+            parsed_function.append(("raises", raises))
+
+        log.debug("function -- %s", parsed_function)
 
         return parsed_function
 
@@ -695,13 +711,16 @@ class PythonParser:
         Returns:
             {Bool} True if the docstring is confirmed closed
         """
+
         def set_closing_string(match):
             if match is not None:
                 s = match.group(0).strip()[0:3]
                 if s in ['"""', "'''"]:
                     self.closing_string = s
                 else:
-                    raise Exception('could not find closing string.  Match was: {}'.format(match))
+                    raise Exception(
+                        "could not find closing string.  Match was: {}".format(match)
+                    )
 
         indentation_level = view.indentation_level(position)
 
@@ -738,7 +757,7 @@ class PythonParser:
         return False
 
 
-def get_parser(view) -> Optional[PythonParser]:
+def get_parser(view: sublime.View) -> Optional[PythonParser]:
     """Return the class of the parser to use.
 
     Arguments:
@@ -748,8 +767,8 @@ def get_parser(view) -> Optional[PythonParser]:
         {PythonParser} or None if the current file type isn't a python file
     """
     scope = view.scope_name(view.sel()[0].end())
-    res = re.search(r'\bsource\.([a-z+\-]+)', scope)
-    source_lang = res.group(1) if res else 'js'
+    res = re.search(r"\bsource\.([a-z+\-]+)", scope)
+    source_lang = res.group(1) if res else "js"
     view_settings = view.settings()
 
     if source_lang == "python":

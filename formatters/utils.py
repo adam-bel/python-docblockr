@@ -1,10 +1,9 @@
 """Common Utilities for the default formatters."""
-import logging
 import sublime
-
+from ..utils.log import child_logger
 from .registry import REGISTRY
 
-log = logging.getLogger(__name__)
+log = child_logger(__name__)
 
 
 def get_formatter(name):
@@ -22,9 +21,12 @@ def get_formatter(name):
     formatter = REGISTRY.get(name, None)
 
     if formatter is None:
-        log.warning('Formatter {} doesn\'t exist. Defaulting to Base formatter.'.format(name))
+        log.warning(
+            "Formatter {} doesn't exist. Defaulting to Base formatter.".format(name)
+        )
         from . import base
-        formatter = getattr(base, 'BaseFormatter')
+
+        formatter = getattr(base, "BaseFormatter")
 
     return formatter
 
@@ -44,15 +46,15 @@ def get_setting(key, default=None):
     Returns:
         {str} or {None} -- value of the setting
     """
-    settings = sublime.load_settings('DocblockrPython.sublime-settings')
+    settings = sublime.load_settings("PyDoc.sublime-settings")
     os_specific_settings = {}
 
     os_name = sublime.platform()
-    if os_name == 'osx':
-        os_specific_settings = sublime.load_settings('DocblockrPython (OSX).sublime-settings')
-    elif os_name == 'windows':
-        os_specific_settings = sublime.load_settings('DocblockrPython (Windows).sublime-settings')
+    if os_name == "osx":
+        os_specific_settings = sublime.load_settings("PyDoc (OSX).sublime-settings")
+    elif os_name == "windows":
+        os_specific_settings = sublime.load_settings("PyDoc (Windows).sublime-settings")
     else:
-        os_specific_settings = sublime.load_settings('DocblockrPython (Linux).sublime-settings')
+        os_specific_settings = sublime.load_settings("PyDoc (Linux).sublime-settings")
 
     return os_specific_settings.get(key, settings.get(key, default))

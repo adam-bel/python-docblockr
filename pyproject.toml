@@ -1,0 +1,10 @@
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.pyright]
+pythonVersion = '3.8'
+extraPaths = [
+    "C:\\Program Files\\Sublime Text\\Lib\\python38",
+    "C:\\Users\\thepoy\\AppData\\Roaming\\Sublime Text\\Lib\\python38"
+]

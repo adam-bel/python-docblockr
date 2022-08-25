@@ -6,17 +6,18 @@ Website: https://github.com/adambullmer/sublime-docblockr-python
 Credit to `spadgos` and the team at DocBlockr for providing some source code
 to support this project
 """
-import logging
 import re
-from typing import Optional
-
 import sublime
 import sublime_plugin
 
+from typing import Optional
+
+from .utils.log import child_logger
 from .formatters.utils import get_formatter, get_setting
 from .parsers.parser import PythonParser, get_parser
 
-log = logging.getLogger(__name__)
+
+log = child_logger(__name__)
 
 
 def write(view, string):
@@ -27,7 +28,7 @@ def write(view, string):
         string {String}       -- String representation of a snippet to be
             written to the view
     """
-    view.run_command('insert_snippet', {'contents': string})
+    view.run_command("insert_snippet", {"contents": string})
 
 
 def escape(string):
@@ -46,7 +47,7 @@ def escape(string):
         {String} String with escaped characters
 
     """
-    return string.replace('$', r'\$').replace('{', r'\{').replace('}', r'\}')
+    return string.replace("$", r"\$").replace("{", r"\{").replace("}", r"\}")
 
 
 class DocblockrPythonCommand(sublime_plugin.TextCommand):
@@ -69,13 +70,13 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
     """
 
     position = 0
-    trailing_rgn = ''
-    trailing_string = ''
-    settings = ''
-    indent_spaces = ''
+    trailing_rgn = ""
+    trailing_string = ""
+    settings = ""
+    indent_spaces = ""
     parser: Optional[PythonParser] = None
-    line = ''
-    contents = ''
+    line = ""
+    contents = ""
     view_settings = None
     project_settings = None
 
@@ -88,11 +89,13 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
         Arguments:
             edit {sublime.edit} -- Sublime Edit buffer
         """
+        assert self.parser is not None
+
         self.initialize(self.view)
 
         # If this docstring is already closed, then generate a new line
         if self.parser.is_docstring_closed(self.view, self.view.sel()[0].end()) is True:
-            write(self.view, '\n')
+            write(self.view, "\n")
             return
 
         self.view.erase(edit, self.trailing_rgn)
@@ -102,7 +105,7 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
         snippet = self.create_snippet(output)
         write(self.view, snippet)
 
-    def initialize(self, view):
+    def initialize(self, view: sublime.View):
         """Set up the command's settings.
 
         Begins preparsing the file to gather some basic information.
@@ -115,7 +118,7 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
         self.view_settings = view.settings()
 
         project_data = view.window().project_data() or {}
-        self.project_settings = project_data.get('DocblockrPython', {})
+        self.project_settings = project_data.get("PyDoc", {})
 
         position = view.sel()[0].end()
 
@@ -124,15 +127,24 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
         self.trailing_string = view.substr(self.trailing_rgn).strip()
         # drop trailing '"""'
         self.trailing_string = escape(
-            re.sub(r'\s*("""|\'\'\')\s*$', '', self.trailing_string)
+            re.sub(r'\s*("""|\'\'\')\s*$', "", self.trailing_string)
         )
 
-        self.parser = parser = get_parser(view)
+        self.parser = get_parser(view)
+
+        if not self.parser:
+            return
 
         # read the previous line
-        self.line = parser.get_definition(view, position)
-        self.contents = parser.get_definition_contents(view, view.line(position).end())
-        log.debug('contents -- {}'.format(self.contents))
+        self.line, multiline = self.parser.get_definition(view, position)
+        self.contents = self.parser.get_definition_contents(
+            view, view.line(position).end(), multiline
+        )
+
+        if re.match(r"^\s*async\s+def", self.line):
+            log.debug("the function is asynchronous")
+            self.line = re.sub(r"async\s+", "", self.line)
+            self.contents = re.sub(r"async\s+", "", self.contents)
 
     def create_snippet(self, parsed_attributes):
         """Format a Sublime Text snippet syntax string.
@@ -147,8 +159,8 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
             str -- sublime text formatted snippet string
 
         """
-        project_formatter = self.project_settings.get('formatter', None)
-        formatter = get_formatter(project_formatter or get_setting('formatter'))()
+        project_formatter = self.project_settings.get("formatter", None)
+        formatter = get_formatter(project_formatter or get_setting("formatter"))()
 
         # Make sure the summary line has the trailing text, or a placeholder
         if not self.trailing_string:
