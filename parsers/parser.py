@@ -71,7 +71,20 @@ def split_by_commas(string):
     return out
 
 
-START_KEYWORDS = ["def", "class", "async"]
+START_KEYWORD_RULES = (
+    re.compile(r"^def\s+"),
+    re.compile(r"^class\s+"),
+    re.compile(r"^async\s+def\s+"),
+)
+
+
+def is_start_keyword(line: str) -> bool:
+    for rule in START_KEYWORD_RULES:
+        if rule.match(line):
+            log.debug("the line contains a keyword: %s", rule)
+            return True
+
+    return False
 
 
 def read_next_line(view: sublime.View, position: int, reverse=False):
@@ -108,9 +121,7 @@ def read_next_line(view: sublime.View, position: int, reverse=False):
         if reverse:
             line = view.line(next_line)
             line_str = view.substr(line).strip()
-            start_keyword = line_str.split(" ", 2)[0]
-            log.debug("start keyword -> %s", start_keyword)
-            if line_str.split(" ", 2)[0] in START_KEYWORDS:
+            if is_start_keyword(line_str):
                 go_on = False
         else:
             # Ensure within bounds of the view
@@ -285,7 +296,7 @@ class PythonParser:
             if docstring_type is None:
                 if re.match(r"^\s*(class )", current_line_string):
                     docstring_type = "class"
-                elif re.match(r"^\s*(def )", current_line_string):
+                elif re.match(r"^\s*(async\s+)?(def )", current_line_string):
                     docstring_type = "function"
                 else:
                     docstring_type = "module"
@@ -425,6 +436,10 @@ class PythonParser:
             pieces = variable.split(":", 2)
             variable = pieces[0].strip()
             hints[variable] = pieces[1].strip()
+
+        if params.get("default") and hints.get(variable):
+            if re.match(r"^Optional\[.+?\]$", hints[variable]):
+                hints[variable] = re.sub(r"^Optional\[(.+?)\]$", r"\1", hints[variable])
 
         params["name"] = variable
         params["type"] = (
@@ -590,12 +605,14 @@ class PythonParser:
 
         arguments = re.search(r"^\s*def\s+\w+\((.*)\)", line)
 
-        log.debug("found arguments -- %r", arguments)
+        log.debug("found arguments by re -- %r", arguments)
 
         # Parse type hints
         hints = dict(
             re.findall(r"(\w+)\s*:\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*", arguments.group(1))  # type: ignore
         )
+
+        log.debug("hints: %s", hints)
 
         # Remove type hints
         arguments = re.sub(r":\s*([\w\.]+\[[^:]*\]|[\w\.]+)\s*", "", arguments.group(1))  # type: ignore
@@ -606,11 +623,18 @@ class PythonParser:
         excluded_parameters = ["self", "cls"]
         arguments = split_by_commas(arguments)
 
+        log.debug("arguments: %s", arguments)
+
         for index, argument in enumerate(arguments):
             if index == 0 and argument in excluded_parameters:
                 continue
 
             argument_type = "keyword_arguments" if "=" in argument else "arguments"
+
+            if argument[0] == "*":
+                argument = argument[1:]
+                hints[argument] = f"Tuple[{hints[argument]}]"
+
             params = self.process_variable(argument, hints)
             parsed_arguments[argument_type].append(params)
 
