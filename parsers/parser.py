@@ -292,6 +292,12 @@ class PythonParser:
 
             definition = current_line_string + "\n" + definition
 
+        log.debug(
+            "result of `read_above` -> type: '%s', definition: '%s'",
+            docstring_type,
+            definition,
+        )
+
         return docstring_type, definition
 
     @classmethod
@@ -347,7 +353,14 @@ class PythonParser:
             ):
                 continue
 
-            definition += current_line_string + "\n"
+            log.debug("contents each line: '%s'", current_line_string)
+
+            # If it is a function defined on multiple lines,
+            # the definitions should be combined into one line
+            if re.match(r"^\s*(async\s+)?def\s+\w+\($", current_line_string):
+                definition += current_line_string
+            else:
+                definition += current_line_string + "\n"
 
         log.debug("contents -> %s", definition)
 
@@ -417,7 +430,7 @@ class PythonParser:
 
         return params
 
-    def parse_variables(self, contents):
+    def parse_variables(self, contents: str):
         """Parse module level variables.
 
         Arguments:
@@ -428,9 +441,11 @@ class PythonParser:
         """
         variables = []
         regex = re.compile(
-            r"^\s*((?:(?!from |import |def |class |@).)+$)", re.MULTILINE
+            r"^\s*((?:(?!from |import |async |def |class |@).)+$)", re.MULTILINE
         )
         matches = re.findall(regex, contents)
+
+        log.debug("class variables: %s", matches)
 
         if len(matches) == 0:
             return None
