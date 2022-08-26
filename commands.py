@@ -118,8 +118,8 @@ class PydocCommand(sublime_plugin.TextCommand):
         """
         self.view_settings = view.settings()
 
-        project_data = view.window().project_data() or {}
-        self.project_settings = project_data.get(PACKAGE_NAME, {})
+        project_settings = (view.window().project_data() or {}).get("settings", {})
+        self.project_settings = project_settings.get(PACKAGE_NAME, {})
 
         position = view.sel()[0].end()
 
