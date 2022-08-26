@@ -12,7 +12,7 @@ import sublime
 
 from typing import Dict, Optional, Literal
 from datetime import datetime
-from .consts import TIME_FORMAT_WITHOUT_DATE
+from .consts import LOGGER_NAME, TIME_FORMAT_WITHOUT_DATE
 
 _style = Literal["%", "{", "$"]
 
@@ -119,7 +119,8 @@ def get_logger():
     Returns:
         Logger: the instance of `logging.Logger`
     """
-    logger = logging.getLogger("python-docblockr")
+    # 如果不传入 name 则会返回 root logger，以后可通过 loggine.Logger 创建 logger 实例
+    logger = logging.getLogger(LOGGER_NAME)
 
     console_handler = logging.StreamHandler()
     fmt = Formatter(datefmt=TIME_FORMAT_WITHOUT_DATE, print_position=True)
@@ -144,6 +145,6 @@ def child_logger(name: str) -> logging.Logger:
     Returns:
         Logger: the instance of `logging.Logger`
     """
-    log = __logger.getChild(name.replace("python-docblockr.", ""))
+    log = __logger.getChild(name.replace(f"{LOGGER_NAME}.", ""))
 
     return log

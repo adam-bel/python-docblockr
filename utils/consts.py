@@ -8,6 +8,7 @@
 
 LOG_FORMAT = "[%(levelname)s] %(asctime)s - %(name)s:%(lineno)d - %(message)s"
 
+LOGGER_NAME = "python-docblockr"
 PACKAGE_NAME = "PythonDocblockr"
 SETTING_FILE = "%s.sublime-settings" % PACKAGE_NAME
 
