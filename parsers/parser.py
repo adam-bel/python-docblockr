@@ -1,7 +1,7 @@
 """Parsing Class for python files."""
 import re
 import sublime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from ..utils.log import child_logger
 
 log = child_logger(__name__)
@@ -421,6 +421,11 @@ class PythonParser:
             variable = pieces[0].strip()
             params["default"] = pieces[1].strip()
 
+        if 0 < variable.find(":") < len(variable) - 1:
+            pieces = variable.split(":", 2)
+            variable = pieces[0].strip()
+            hints[variable] = pieces[1].strip()
+
         params["name"] = variable
         params["type"] = (
             hints.get(variable, "")
@@ -445,10 +450,10 @@ class PythonParser:
         )
         matches = re.findall(regex, contents)
 
-        log.debug("class variables: %s", matches)
-
         if len(matches) == 0:
             return None
+
+        log.debug("class variables: %s", matches)
 
         for match in matches:
             variable = self.process_variable(match)
