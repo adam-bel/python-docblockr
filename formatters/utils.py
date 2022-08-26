@@ -12,8 +12,8 @@ FORMATTER_DICT: Dict[str, Type[base.Base]] = {
     "PEP0257": PEP0257.Pep0257Formatter,
     "docblock": docblock.DocblockFormatter,
     "google": google.GoogleFormatter,
-    "numpy": sphinx.SphinxFormatter,
-    "sphinx": numpy.NumpyFormatter,
+    "sphinx": sphinx.SphinxFormatter,
+    "numpy": numpy.NumpyFormatter,
 }
 
 
