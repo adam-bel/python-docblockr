@@ -12,6 +12,7 @@ import sublime_plugin
 
 from typing import Optional
 
+from .utils.consts import PACKAGE_NAME
 from .utils.log import child_logger
 from .formatters.utils import get_formatter, get_setting
 from .parsers.parser import PythonParser, get_parser
@@ -118,7 +119,7 @@ class PydocCommand(sublime_plugin.TextCommand):
         self.view_settings = view.settings()
 
         project_data = view.window().project_data() or {}
-        self.project_settings = project_data.get("PyDoc", {})
+        self.project_settings = project_data.get(PACKAGE_NAME, {})
 
         position = view.sel()[0].end()
 
