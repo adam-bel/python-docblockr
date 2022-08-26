@@ -1,6 +1,8 @@
 """Common Utilities for the default formatters."""
 import sublime
 from typing import Dict, Type
+
+from ..utils.consts import PACKAGE_NAME
 from ..utils.log import child_logger
 from . import base, PEP0257, docblock, google, sphinx, numpy
 
@@ -58,15 +60,21 @@ def get_setting(key, default=None):
     Returns:
         {str} or {None} -- value of the setting
     """
-    settings = sublime.load_settings("PyDoc.sublime-settings")
+    settings = sublime.load_settings(f"{PACKAGE_NAME}.sublime-settings")
     os_specific_settings = {}
 
     os_name = sublime.platform()
     if os_name == "osx":
-        os_specific_settings = sublime.load_settings("PyDoc (OSX).sublime-settings")
+        os_specific_settings = sublime.load_settings(
+            f"{PACKAGE_NAME} (OSX).sublime-settings"
+        )
     elif os_name == "windows":
-        os_specific_settings = sublime.load_settings("PyDoc (Windows).sublime-settings")
+        os_specific_settings = sublime.load_settings(
+            f"{PACKAGE_NAME} (Windows).sublime-settings"
+        )
     else:
-        os_specific_settings = sublime.load_settings("PyDoc (Linux).sublime-settings")
+        os_specific_settings = sublime.load_settings(
+            f"{PACKAGE_NAME} (Linux).sublime-settings"
+        )
 
     return os_specific_settings.get(key, settings.get(key, default))
