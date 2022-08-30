@@ -15,8 +15,11 @@ If you don't want to trigger the parser on a docstring, simply hold down [ctrl]/
 For configuration and extendability, see the readme
 https://github.com/thep0y/python-docblockr
 
+This package is based on https://github.com/adambullmer/sublime_docblockr_python, so thanks to @adambullmer for contributing this open source plugin. 
+
 This package is suitable for ST4, if you are using ST3 please refer to:
 https://github.com/adambullmer/sublime_docblockr_python
+
 
 Examples
 --------
