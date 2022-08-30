@@ -13,6 +13,9 @@ To get started:
 If you don't want to trigger the parser on a docstring, simply hold down [ctrl]/[cmd] and press [enter]
 
 For configuration and extendability, see the readme
+https://github.com/thep0y/python-docblockr
+
+This package is suitable for ST4, if you are using ST3 please refer to:
 https://github.com/adambullmer/sublime_docblockr_python
 
 Examples
