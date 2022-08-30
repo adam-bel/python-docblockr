@@ -1,9 +1,7 @@
 [
   {
-    "keys": [
-      "enter"
-    ],
-    "command": "pydoc",
+    "keys": ["enter"],
+    "command": "docblockr_python",
     "context": [
       {
         "key": "selector",
@@ -38,10 +36,8 @@
     ]
   },
   {
-    "keys": [
-      "keypad_enter"
-    ],
-    "command": "pydoc",
+    "keys": ["keypad_enter"],
+    "command": "docblockr_python",
     "context": [
       {
         "key": "selector",
@@ -76,10 +72,8 @@
     ]
   },
   {
-    "keys": [
-      "tab"
-    ],
-    "command": "pydoc",
+    "keys": ["tab"],
+    "command": "docblockr_python",
     "context": [
       {
         "key": "selector",

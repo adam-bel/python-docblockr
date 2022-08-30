@@ -51,7 +51,7 @@ def escape(string):
     return string.replace("$", r"\$").replace("{", r"\{").replace("}", r"\}")
 
 
-class PydocCommand(sublime_plugin.TextCommand):
+class DocblockrPythonCommand(sublime_plugin.TextCommand):
     """Sublime Text Command.
 
     Command to be run by Sublime Text

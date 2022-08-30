@@ -4,7 +4,7 @@
 # @Email:     thepoy@163.com
 # @File Name: log.py
 # @Created:   2022-08-25 11:30:28
-# @Modified:  2022-08-26 09:27:34
+# @Modified:  2022-08-30 08:43:01
 
 import os
 import logging
@@ -191,9 +191,8 @@ def get_logger():
 
     if level == logging.DEBUG:
         logger.addHandler(stream_handler())
-        logger.addHandler(file_handler())
-    else:
-        logger.addHandler(file_handler())
+
+    logger.addHandler(file_handler())
 
     logger.setLevel(level)
 

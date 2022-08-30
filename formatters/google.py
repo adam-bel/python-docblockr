@@ -40,7 +40,7 @@ class GoogleFormatter(Base):
     def keyword_arguments(self, attributes):
         """Create snippet string for a list of keyword arguments."""
         section = ""
-        template = "\t{name} (:obj:`{type}`): {description} (default: {{{default}}})\n"
+        template = "\t{name} (:obj:`{type}`): {description} (default: `{default}`)\n"
 
         if len(attributes) == 0:
             return ""
