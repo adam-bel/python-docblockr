@@ -16,6 +16,13 @@
                 "args": {
                   "base_file": "${packages}/python-docblockr/DocblockrPython.sublime-settings"
                 }
+              },
+              {
+                "caption": "Key Bindings",
+                "command": "edit_settings",
+                "args": {
+                  "base_file": "${packages}/python-docblockr/Default.sublime-keymap"
+                }
               }
             ]
           }

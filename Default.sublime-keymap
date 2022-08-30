@@ -1,3 +1,6 @@
+/*
+    It is not recommended to modify the following keymap.
+*/
 [
   {
     "keys": ["enter"],
