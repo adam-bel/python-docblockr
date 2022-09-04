@@ -96,7 +96,7 @@ class NumpyFormatter(Base):
 
         return section
 
-    def variables(self, attributes):
+    def attributes(self, attributes):
         """Create snippet string for a list of variables."""
         section = "\nAttributes\n----------\n"
         template = "{name} : :obj:`{type}`\n\t{description}\n"

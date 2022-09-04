@@ -118,15 +118,17 @@ def read_next_line(view: sublime.View, position: int, reverse=False):
         next_line = current_line.begin() if reverse else current_line.end()
         next_line += modifier
 
+        log.debug("next line -> %s", next_line)
+
         if reverse:
             line = view.line(next_line)
             line_str = view.substr(line).strip()
             if is_start_keyword(line_str):
                 go_on = False
-        else:
-            # Ensure within bounds of the view
-            if not (next_line < view.size() and next_line > 0):
-                break
+
+        # Ensure within bounds of the view
+        if not (next_line < view.size() and next_line > 0):
+            break
 
         current_line = view.line(next_line)
 
@@ -204,6 +206,34 @@ def guess_type_from_value(value: Optional[str]) -> Optional[str]:
     return None
 
 
+MULTILINE_PATTERNS = (
+    # A function defined on multiple lines
+    re.compile(r"^\s*(async\s+)?def\s+\w+\($"),
+    # An import statement takes up multiple lines
+    re.compile(r"^from\s+\w+(\.\w+)*\s+import\s+\($"),
+    # A variable defined on multiple lines
+    re.compile(r"^\w+\s+=\s+\w+\($"),
+)
+
+
+def use_multiple_lines(line: str) -> bool:
+    """Determines whether the current line uses a multi-line declaration or definition.
+
+    Arguments:
+        line (str) -- Definition Line
+
+    Returns:
+        bool -- Returns true if line uses a multi-line definition, otherwise returns false
+    """
+    line = line.strip()
+
+    for ptn in MULTILINE_PATTERNS:
+        if ptn.match(line):
+            return True
+
+    return False
+
+
 class PythonParser:
     """Parser class Specific to Python.
 
@@ -234,6 +264,8 @@ class PythonParser:
         """
         # reset the position to the beginning of the line
         position = view.line(position).begin()
+
+        log.debug("current position -> %s", position)
 
         # At beginning of the module
         if position == 0:
@@ -368,12 +400,10 @@ class PythonParser:
 
             # If it is a function defined on multiple lines,
             # the definitions should be combined into one line
-            if re.match(r"^\s*(async\s+)?def\s+\w+\($", current_line_string):
+            if use_multiple_lines(current_line_string):
                 definition += current_line_string
             else:
                 definition += current_line_string + "\n"
-
-        log.debug("contents -> %s", definition)
 
         return definition
 
@@ -390,8 +420,10 @@ class PythonParser:
         Returns:
             {Dictionary} Store of attributes and their values
         """
-        # At beginning of the module
 
+        log.debug("line -> %s, contents: %s", line, contents)
+
+        # At beginning of the module
         output = self.process_module(line, contents)
         if output is not None:
             return output
@@ -496,7 +528,7 @@ class PythonParser:
         variables = self.parse_variables(contents)
 
         if variables is not None:
-            parsed_module.append(("variables", variables))
+            parsed_module.append(("attributes", variables))
 
         log.debug("module -> %s", parsed_module)
 
@@ -551,7 +583,7 @@ class PythonParser:
 
         variables = self.parse_variables(contents)
         if variables is not None:
-            parsed_class.append(("variables", variables))
+            parsed_class.append(("attributes", variables))
 
         log.debug("class -- %s", parsed_class)
 

@@ -103,7 +103,12 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
 
         output = self.parser.parse(self.line, self.contents)
 
+        log.debug("output -> %s", output)
+
         snippet = self.create_snippet(output)
+
+        log.debug("snippet -> %s", snippet)
+
         write(self.view, snippet)
 
     def initialize(self, view: sublime.View):
@@ -133,6 +138,8 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
 
         self.parser = get_parser(view)
 
+        log.debug("get the parser -> %s", self.parser)
+
         if not self.parser:
             return
 
@@ -142,7 +149,7 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
             view, view.line(position).end(), multiline
         )
 
-        if re.match(r"^\s*async\s+def", self.line):
+        if self.line and re.match(r"^\s*async\s+def", self.line):
             log.debug("the function is asynchronous")
             self.line = re.sub(r"async\s+", "", self.line)
             self.contents = re.sub(r"async\s+", "", self.contents)

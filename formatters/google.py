@@ -92,7 +92,7 @@ class GoogleFormatter(Base):
 
         return section
 
-    def variables(self, attributes):
+    def attributes(self, attributes):
         """Create snippet string for a list of variables."""
         section = "\nAttributes:\n"
         template = "\t{name}: {description}\n"

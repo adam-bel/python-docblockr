@@ -34,7 +34,7 @@ class Base:
     Extends:
         metaclass=FormatterMeta
 
-    Variables:
+    Attributes:
         name {str} -- The name the formatter will be registered under.Default is 'google'.
         tab_index {generator} -- Provides a simple count generator for convenience
                                  in making tabbable fields
@@ -55,7 +55,7 @@ class Base:
             "returns": self.returns,
             "yields": self.yields,
             "raises": self.raises,
-            "variables": self.variables,
+            "attributes": self.attributes,
         }
 
     def __iter__(self):
@@ -129,8 +129,8 @@ class Base:
         return ""
 
     @abstractmethod
-    def variables(self, attributes):
-        """Create snippet string for a list of variables."""
+    def attributes(self, attributes):
+        """Create snippet string for a list of attributes."""
         return ""
 
 
@@ -165,6 +165,6 @@ class BaseFormatter(Base):
         """Create snippet string for a list of raiased exceptions."""
         return "{}\n".format(self._generate_field("raises"))
 
-    def variables(self, attributes):
-        """Create snippet string for a list of variables."""
-        return "{}\n".format(self._generate_field("variables"))
+    def attributes(self, attributes):
+        """Create snippet string for a list of attributes."""
+        return "{}\n".format(self._generate_field("attributes"))
