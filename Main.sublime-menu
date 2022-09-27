@@ -14,14 +14,14 @@
                 "caption": "Settings",
                 "command": "edit_settings",
                 "args": {
-                  "base_file": "${packages}/python-docblockr/DocblockrPython.sublime-settings"
+                  "base_file": "${packages}/DocBlockr_Python/DocblockrPython.sublime-settings"
                 }
               },
               {
                 "caption": "Key Bindings",
                 "command": "edit_settings",
                 "args": {
-                  "base_file": "${packages}/python-docblockr/Default.sublime-keymap"
+                  "base_file": "${packages}/DocBlockr_Python/Default.sublime-keymap"
                 }
               }
             ]
