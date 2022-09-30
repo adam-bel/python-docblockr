@@ -18,7 +18,7 @@ class GoogleFormatter(Base):
     def arguments(self, attributes):
         """Create snippet string for a list of arguments."""
         section = "\nArgs:\n"
-        template = "\t{name} (:obj:`{type}`): {description}\n"
+        template = "\t{name} ({type}): {description}\n"
 
         for attr in attributes["arguments"]:
             section += template.format(
@@ -40,7 +40,7 @@ class GoogleFormatter(Base):
     def keyword_arguments(self, attributes):
         """Create snippet string for a list of keyword arguments."""
         section = ""
-        template = "\t{name} (:obj:`{type}`): {description} (default: `{default}`)\n"
+        template = "\t{name} ({type}): {description} (default: `{default}`)\n"
 
         if len(attributes) == 0:
             return ""
@@ -58,7 +58,7 @@ class GoogleFormatter(Base):
     def returns(self, attribute):
         """Create snippet string for a list of return values."""
         section = "\nReturns:\n"
-        template = "\t:obj:`{type}`: {description}\n"
+        template = "\t{type}: {description}\n"
 
         section += template.format(
             description=self._generate_field("description"),
@@ -70,7 +70,7 @@ class GoogleFormatter(Base):
     def yields(self, attribute):
         """Create snippet string for a list of yielded results."""
         section = "\nYields:\n"
-        template = "\t{description}\n\t:obj:`{type}`\n"
+        template = "\t{description}\n\t{type}\n"
 
         section += template.format(
             description=self._generate_field("description"),

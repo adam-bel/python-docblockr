@@ -18,7 +18,7 @@ class NumpyFormatter(Base):
     def arguments(self, attributes):
         """Create snippet string for a list of arguments."""
         section = "\nParameters\n----------\n"
-        template = "{name} : :obj:`{type}`\n\t{description}\n"
+        template = "{name} : {type}\n\t{description}\n"
 
         for attr in attributes["arguments"]:
             section += template.format(
@@ -41,7 +41,7 @@ class NumpyFormatter(Base):
         """Create snippet string for a list of keyword arguments."""
         section = ""
         template = (
-            "{name} : :obj:`{type}`, optional\n\t{description} "
+            "{name} : {type}, optional\n\t{description} "
             "(the default is {default}, which {default_description})\n"
         )
 
@@ -62,7 +62,7 @@ class NumpyFormatter(Base):
     def returns(self, attribute):
         """Create snippet string for a list of return values."""
         section = "\nReturns\n-------\n"
-        template = ":obj:`{type}`\n\t{description}\n"
+        template = "{type}\n\t{description}\n"
 
         section += template.format(
             type=self._generate_field("type", attribute["type"]),
@@ -74,7 +74,7 @@ class NumpyFormatter(Base):
     def yields(self, attribute):
         """Create snippet string for a list of yielded results."""
         section = "\nYields\n------\n"
-        template = ":obj:`{type}`\n\t{description}\n"
+        template = "{type}\n\t{description}\n"
 
         section += template.format(
             type=self._generate_field("type", attribute["type"]),
@@ -99,7 +99,7 @@ class NumpyFormatter(Base):
     def attributes(self, attributes):
         """Create snippet string for a list of variables."""
         section = "\nAttributes\n----------\n"
-        template = "{name} : :obj:`{type}`\n\t{description}\n"
+        template = "{name} : {type}\n\t{description}\n"
 
         for attr in attributes:
             section += template.format(
