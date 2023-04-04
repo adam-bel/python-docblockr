@@ -17,7 +17,7 @@ class SphinxFormatter(Base):
 
     def arguments(self, attributes):
         """Create snippet string for a list of arguments."""
-        section = ""
+        section = "\n"
         template = ":param {name}: {description}\n"
         template += ":type {name_1}: {type}\n"
 
@@ -30,6 +30,9 @@ class SphinxFormatter(Base):
             )
 
         section += self.keyword_arguments(attributes["keyword_arguments"])
+
+        if section == "\n":
+            section = ""
 
         return section
 
@@ -78,12 +81,13 @@ class SphinxFormatter(Base):
 
     def raises(self, attributes):
         """Create snippet string for a list of raiased exceptions."""
-        section = ":raises:"
-        template = " {name},"
+        section = ""
+        template = ":raises {name}: {description}\n"
 
         for attr in attributes:
             section += template.format(
                 name=self._generate_field("name", attr),
+                description=self._generate_field("description"),
             )
 
         return section[:-1] + "\n"

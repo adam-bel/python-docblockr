@@ -174,7 +174,7 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
         if not self.trailing_string:
             self.trailing_string = formatter.summary()
 
-        snippet = self.trailing_string + formatter.description()
+        snippet = self.trailing_string + "\n"#formatter.description()
 
         for attribute_type, attributes in parsed_attributes:
             if len(attributes) == 0:
