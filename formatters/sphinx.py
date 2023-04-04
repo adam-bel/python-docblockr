@@ -94,7 +94,7 @@ class SphinxFormatter(Base):
 
     def attributes(self, attributes):
         """Create snippet string for a list of attributes."""
-        section = ""
+        section = "\n"
         template = ":param {name}: {description}\n"
         template += ":type {name_1}: {type}\n"
 
