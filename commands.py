@@ -176,12 +176,20 @@ class DocblockrPythonCommand(sublime_plugin.TextCommand):
 
         snippet = self.trailing_string + "\n"#formatter.description()
 
+        sani = False
+
         for attribute_type, attributes in parsed_attributes:
             if len(attributes) == 0:
                 continue
 
+            if sani:
+                snippet += "\n"
+
+            presni = snippet
             segment = getattr(formatter, attribute_type)
             snippet += segment(attributes)
+            if presni == snippet and attribute_type == "arguments":
+                sani = True
 
         snippet += self.parser.closing_string
 
