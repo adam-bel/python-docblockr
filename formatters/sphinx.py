@@ -19,7 +19,7 @@ class SphinxFormatter(Base):
         """Create snippet string for a list of arguments."""
         section = "\n"
         template = ":param {name}: {description}\n"
-        template += ":type {name_1}: {type}\n"
+        template += ":type {name_1}: <{type}>\n"
 
         for attr in attributes["arguments"]:
             section += template.format(
@@ -40,7 +40,7 @@ class SphinxFormatter(Base):
         """Create snippet string for a list of keyword arguments."""
         section = ""
         template = ":param {name}: {description}, defaults to {default}\n"
-        template += ":type {name_1}: {type}, optional\n"
+        template += ":type {name_1}: <{type}>, optional\n"
 
         for attr in attributes:
             section += template.format(
@@ -57,7 +57,7 @@ class SphinxFormatter(Base):
         """Create snippet string for a list of return values."""
         section = ""
         template = ":returns: {description}\n"
-        template += ":rtype: {{{type}}}\n"
+        template += ":rtype: <{type}>\n"
 
         section += template.format(
             description=self._generate_field("description"),
@@ -70,7 +70,7 @@ class SphinxFormatter(Base):
         """Create snippet string for a list of yielded results."""
         section = ""
         template = ":returns: {description}\n"
-        template += ":rtype: {{{type}}}\n"
+        template += ":rtype: <{type}>\n"
 
         section += template.format(
             description=self._generate_field("description"),
@@ -96,7 +96,7 @@ class SphinxFormatter(Base):
         """Create snippet string for a list of attributes."""
         section = "\n"
         template = ":param {name}: {description}\n"
-        template += ":type {name_1}: {type}\n"
+        template += ":type {name_1}: <{type}>\n"
 
         for attr in attributes:
             section += template.format(
