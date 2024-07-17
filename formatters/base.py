@@ -81,7 +81,7 @@ class Base:
         if value is not None:
             return value
 
-        return "${{{tab_index}:[{name}]}}".format(
+        return "${{{tab_index}:_{name}_}}".format(
             tab_index=next(self.tab_index), name=name
         )
 
